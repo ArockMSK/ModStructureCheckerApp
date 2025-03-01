@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>false</SelfContained>
+		<ApplicationIcon>ModStructureCheckerApp.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AssemblyName>ModStructureCheckerApp</AssemblyName>
+		<Company>Arock</Company>
+		<Product>ModStructureCheckerApp</Product>
+		<Description>Инструмент для анализа модов RimWorld. Собрано с помощью Grok от xAI.</Description>
+		<Copyright>Copyright © Arock 2025</Copyright>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Update="ModStructureCheckerApp.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="README.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="ErrorStatusForm.cs">
+			<SubType>Form</SubType>
+		</Compile>
+		<Compile Update="Form1.cs">
+			<SubType>Form</SubType>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="*.dll;*.pdb;*.deps.json;*.runtimeconfig.json;*.xml">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>
