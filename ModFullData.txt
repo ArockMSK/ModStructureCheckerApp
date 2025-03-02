@@ -1,0 +1,2287 @@
+﻿Полная сборка данных модов начата: 02.03.2025 16:51:02
+
+Корневая директория:
+Текстовые файлы:
+Файл: D:\Projects\ModStructureCheckerApp\ErrorStatusForm.cs
+Тип: cs
+Содержимое:
+using System;
+using System.IO;
+using System.Windows.Forms;
+
+namespace ModStructureCheckerApp
+{
+    public partial class ErrorStatusForm : Form
+    {
+        private TextBox txtErrorLog = null!;
+        private Button btnClose = null!;
+        private string saveFolder;
+        private string currentLanguage;
+
+        public ErrorStatusForm(string saveFolder, string currentLanguage)
+        {
+            this.saveFolder = saveFolder;
+            this.currentLanguage = currentLanguage;
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            txtErrorLog = new TextBox();
+            btnClose = new Button();
+            SuspendLayout();
+            // 
+            // txtErrorLog
+            // 
+            txtErrorLog.Location = new Point(12, 38);
+            txtErrorLog.Multiline = true;
+            txtErrorLog.Name = "txtErrorLog";
+            txtErrorLog.Size = new Size(521, 209);
+            txtErrorLog.TabIndex = 1;
+            txtErrorLog.ScrollBars = ScrollBars.Vertical;
+            // 
+            // btnClose
+            // 
+            btnClose.Location = new Point(12, 9);
+            btnClose.Name = "btnClose";
+            btnClose.Size = new Size(75, 23);
+            btnClose.TabIndex = 0;
+            btnClose.Click += BtnClose_Click;
+            // 
+            // ErrorStatusForm
+            // 
+            ClientSize = new Size(545, 274);
+            Controls.Add(btnClose);
+            Controls.Add(txtErrorLog);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "ErrorStatusForm";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Error Status";
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        private void BtnClose_Click(object? sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        public void AddError(string errorMessage)
+        {
+            if (txtErrorLog.Text.Length > 0)
+                txtErrorLog.Text += "\r\n";
+            txtErrorLog.Text += $"[{DateTime.Now:HH:mm:ss}] {errorMessage} ❌";
+
+            string errorFile = Path.Combine(saveFolder, "ScanErrors.txt");
+            string tip = GetErrorTip(errorMessage, currentLanguage);
+            File.AppendAllText(errorFile, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {errorMessage}\r\n{tip}\r\n");
+        }
+
+        public void CompleteScan()
+        {
+            if (txtErrorLog.Text.Length > 0)
+                txtErrorLog.Text += "\r\n";
+            txtErrorLog.Text += $"[{DateTime.Now:HH:mm:ss}] {TranslateScanComplete(currentLanguage)} ✅";
+
+            string errorFile = Path.Combine(saveFolder, "ScanErrors.txt");
+            File.AppendAllText(errorFile, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {TranslateScanComplete(currentLanguage)}\r\n-----\r\n");
+        }
+
+        private string TranslateScanComplete(string language)
+        {
+            return language == "English" ? "Scan completed" :
+                   language == "Russian" ? "Сканирование завершено" :
+                   "扫描完成";
+        }
+
+        private string GetErrorTip(string errorMessage, string language)
+        {
+            if (errorMessage.Contains("Access Denied") || errorMessage.Contains("Доступ к пути запрещён") || errorMessage.Contains("路径访问被拒绝"))
+            {
+                return language == "English" ? "Tip: Ensure you have permission to access this file. Try running the app as an administrator." :
+                       language == "Russian" ? "Совет: Убедитесь, что у вас есть права доступа к файлу. Попробуйте запустить приложение от имени администратора." :
+                       "提示: 确保您有权限访问此文件。请尝试以管理员身份运行应用程序。";
+            }
+            else if (errorMessage.Contains("File Not Found") || errorMessage.Contains("Файл не найден") || errorMessage.Contains("文件未找到"))
+            {
+                return language == "English" ? "Tip: Check if the file exists at the specified path. It may have been moved or deleted." :
+                       language == "Russian" ? "Совет: Проверьте, существует ли файл по указанному пути. Возможно, он был перемещён или удалён." :
+                       "提示: 检查文件是否在指定路径存在。它可能已被移动或删除。";
+            }
+            else if (errorMessage.Contains("Invalid Image Format") || errorMessage.Contains("Недопустимый формат изображения") || errorMessage.Contains("无效的图像格式") || errorMessage.Contains("Could not process image"))
+            {
+                return language == "English" ? "Tip: The image file may be corrupted. Try replacing it with a valid copy." :
+                       language == "Russian" ? "Совет: Файл изображения может быть повреждён. Попробуйте заменить его на действующую копию." :
+                       "提示: 图像文件可能已损坏。请尝试替换为有效副本。";
+            }
+            return language == "English" ? "Tip: Unknown error. Check the file or folder manually." :
+                   language == "Russian" ? "Совет: Неизвестная ошибка. Проверьте файл или папку вручную." :
+                   "提示: 未知错误。请手动检查文件或文件夹。";
+        }
+
+        public bool IsErrorLogEmpty()
+        {
+            return string.IsNullOrEmpty(txtErrorLog.Text);
+        }
+
+        public void UpdateLanguage(string language)
+        {
+            currentLanguage = language;
+            if (language == "English")
+            {
+                Text = "Error Status";
+                btnClose.Text = "Close";
+            }
+            else if (language == "Russian")
+            {
+                Text = "Статус ошибок";
+                btnClose.Text = "Закрыть";
+            }
+            else // Chinese
+            {
+                Text = "错误状态";
+                btnClose.Text = "关闭";
+            }
+        }
+    }
+}
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\ExtensionSettingsForm.cs
+Тип: cs
+Содержимое:
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+namespace ModStructureCheckerApp
+{
+    public partial class ExtensionSettingsForm : Form
+    {
+        private CheckedListBox? textExtensionsList;
+        private TextBox? customExtensionInput;
+        private Button? addCustomExtensionButton;
+        private CheckedListBox? imageExtensionsList;
+        private Button? saveButton;
+        private Button? cancelButton;
+        private string currentLanguage;
+
+        public List<string> SelectedTextExtensions { get; private set; }
+        public List<string> SelectedImageExtensions { get; private set; }
+
+        private readonly List<string> availableTextExtensions = new List<string>
+        {
+            ".xml", ".cs", ".txt", ".json", ".yaml", ".ini", ".cfg", ".csproj", ".sln", ".lua", ".py", ".js", ".h", ".cpp", ".md"
+        };
+        private readonly List<string> availableImageExtensions = new List<string>
+        {
+            ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp"
+        };
+
+        public ExtensionSettingsForm(List<string> selectedTextExtensions, List<string> selectedImageExtensions, string language)
+        {
+            currentLanguage = language;
+            SelectedTextExtensions = new List<string>(selectedTextExtensions);
+            SelectedImageExtensions = new List<string>(selectedImageExtensions);
+            InitializeComponents();
+            UpdateLanguage();
+            PopulateLists();
+        }
+
+        private void InitializeComponents()
+        {
+            textExtensionsList = new CheckedListBox();
+            customExtensionInput = new TextBox();
+            addCustomExtensionButton = new Button();
+            imageExtensionsList = new CheckedListBox();
+            saveButton = new Button();
+            cancelButton = new Button();
+
+            SuspendLayout();
+
+            // textExtensionsList
+            textExtensionsList.Location = new Point(12, 40);
+            textExtensionsList.Size = new Size(200, 200);
+            textExtensionsList.CheckOnClick = true;
+
+            // customExtensionInput
+            customExtensionInput.Location = new Point(12, 250);
+            customExtensionInput.Size = new Size(140, 23);
+
+            // addCustomExtensionButton
+            addCustomExtensionButton.Location = new Point(158, 250);
+            addCustomExtensionButton.Size = new Size(54, 23);
+            addCustomExtensionButton.Click += AddCustomExtensionButton_Click;
+
+            // imageExtensionsList
+            imageExtensionsList.Location = new Point(230, 40);
+            imageExtensionsList.Size = new Size(200, 200);
+            imageExtensionsList.CheckOnClick = true;
+
+            // saveButton
+            saveButton.Location = new Point(230, 280);
+            saveButton.Size = new Size(100, 30);
+            saveButton.Click += SaveButton_Click;
+
+            // cancelButton
+            cancelButton.Location = new Point(340, 280);
+            cancelButton.Size = new Size(100, 30);
+            cancelButton.Click += CancelButton_Click;
+
+            // Form
+            ClientSize = new Size(450, 320);
+            Controls.Add(new Label { Text = "Text Files:", Location = new Point(12, 20), AutoSize = true });
+            Controls.Add(textExtensionsList);
+            Controls.Add(customExtensionInput);
+            Controls.Add(addCustomExtensionButton);
+            Controls.Add(new Label { Text = "Image Files:", Location = new Point(230, 20), AutoSize = true });
+            Controls.Add(imageExtensionsList);
+            Controls.Add(saveButton);
+            Controls.Add(cancelButton);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "Extension Settings";
+
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        private void UpdateLanguage()
+        {
+            if (currentLanguage == "English")
+            {
+                Text = "Extension Settings";
+                Controls[0].Text = "Text Files:";
+                Controls[4].Text = "Image Files:";
+                addCustomExtensionButton!.Text = "Add";
+                saveButton!.Text = "Save";
+                cancelButton!.Text = "Cancel";
+            }
+            else if (currentLanguage == "Russian")
+            {
+                Text = "Настройки расширений";
+                Controls[0].Text = "Текстовые файлы:";
+                Controls[4].Text = "Файлы изображений:";
+                addCustomExtensionButton!.Text = "Добавить";
+                saveButton!.Text = "Сохранить";
+                cancelButton!.Text = "Отмена";
+            }
+            else // Chinese
+            {
+                Text = "扩展设置";
+                Controls[0].Text = "文本文件:";
+                Controls[4].Text = "图像文件:";
+                addCustomExtensionButton!.Text = "添加";
+                saveButton!.Text = "保存";
+                cancelButton!.Text = "取消";
+            }
+        }
+
+        private void PopulateLists()
+        {
+            foreach (var ext in availableTextExtensions)
+            {
+                textExtensionsList!.Items.Add(ext, SelectedTextExtensions.Contains(ext));
+            }
+            foreach (var ext in SelectedTextExtensions)
+            {
+                if (!availableTextExtensions.Contains(ext) && !textExtensionsList!.Items.Contains(ext))
+                    textExtensionsList.Items.Add(ext, true);
+            }
+
+            foreach (var ext in availableImageExtensions)
+            {
+                imageExtensionsList!.Items.Add(ext, SelectedImageExtensions.Contains(ext));
+            }
+        }
+
+        private void AddCustomExtensionButton_Click(object? sender, EventArgs e)
+        {
+            string input = customExtensionInput!.Text.Trim().ToLower();
+            if (!string.IsNullOrEmpty(input) && !input.StartsWith("."))
+                input = "." + input;
+            if (!string.IsNullOrEmpty(input) && !textExtensionsList!.Items.Contains(input))
+            {
+                textExtensionsList.Items.Add(input, true);
+                customExtensionInput.Clear();
+            }
+        }
+
+        private void SaveButton_Click(object? sender, EventArgs e)
+        {
+            SelectedTextExtensions.Clear();
+            foreach (object? item in textExtensionsList!.CheckedItems)
+            {
+                if (item != null)
+                    SelectedTextExtensions.Add(item.ToString()!);
+            }
+
+            SelectedImageExtensions.Clear();
+            foreach (object? item in imageExtensionsList!.CheckedItems)
+            {
+                if (item != null)
+                    SelectedImageExtensions.Add(item.ToString()!);
+            }
+
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        private void CancelButton_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+    }
+}
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\Form1.cs
+Тип: cs
+Содержимое:
+using System;
+using System.Drawing;
+using System.IO;
+using System.Text;
+using System.Windows.Forms;
+using System.Globalization;
+using System.Collections.Generic;
+
+namespace ModStructureCheckerApp
+{
+    public partial class Form1 : Form
+    {
+        private string selectedFolder = "";
+        private string saveFolder = "";
+        private ErrorStatusForm? errorForm = null;
+        private string currentLanguage;
+        private List<string> selectedTextExtensions = new List<string> { ".xml", ".cs", ".txt" };
+        private List<string> selectedImageExtensions = new List<string> { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
+
+        public Form1()
+        {
+            string systemLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName.ToLower();
+            if (systemLanguage == "ru")
+                currentLanguage = "Russian";
+            else if (systemLanguage == "zh")
+                currentLanguage = "Chinese";
+            else
+                currentLanguage = "English";
+
+            InitializeComponent();
+            try
+            {
+                this.Icon = new Icon("ModStructureCheckerApp.ico");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки иконки: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            txtStatus.Font = new Font("Segoe UI Emoji", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            UpdateLanguage();
+        }
+
+        private void UpdateLanguage()
+        {
+            if (currentLanguage == "English")
+            {
+                Text = "Mod Structure Checker";
+                btnSelectFolder.Text = "Select Folder 📁";
+                btnRun.Text = "Run Analysis ▶️";
+                btnSaveFolder.Text = "Select Save Folder 📂";
+                label1.Text = "Status: 📋";
+                label2.Text = "Save Folder: 🗂️";
+                labelAuthor.Text = "v1.1.0 by Arock (Built with Grok from xAI)";
+                extensionsSettingsMenu.Text = "Extension Settings";
+            }
+            else if (currentLanguage == "Russian")
+            {
+                Text = "ModStructureCheckerApp";
+                btnSelectFolder.Text = "Выбрать папку 📁";
+                btnRun.Text = "Запустить сборку ▶️";
+                btnSaveFolder.Text = "Выбрать папку сохранения 📂";
+                label1.Text = "Статус: 📋";
+                label2.Text = "Папка для сохранения: 🗂️";
+                labelAuthor.Text = "v1.1.0 от Arock (Создано с Grok от xAI)";
+                extensionsSettingsMenu.Text = "Настройки расширений";
+            }
+            else // Chinese
+            {
+                Text = "模组结构检查器";
+                btnSelectFolder.Text = "选择文件夹 📁";
+                btnRun.Text = "运行分析 ▶️";
+                btnSaveFolder.Text = "选择保存文件夹 📂";
+                label1.Text = "状态: 📋";
+                label2.Text = "保存文件夹: 🗂️";
+                labelAuthor.Text = "v1.1.0 by Arock (由xAI的Grok构建)";
+                extensionsSettingsMenu.Text = "扩展设置";
+            }
+        }
+
+        private void PrintTree(string path, string indent, bool isLast, StreamWriter writer)
+        {
+            string dirName = Path.GetFileName(path);
+            writer.WriteLine(indent + (isLast ? "└─ " : "├─ ") + dirName);
+            string newIndent = indent + (isLast ? "   " : "│  ");
+
+            string[] subDirs = Array.Empty<string>();
+            string[] files = Array.Empty<string>();
+
+            try
+            {
+                subDirs = Directory.GetDirectories(path);
+            }
+            catch (Exception ex)
+            {
+                writer.WriteLine(newIndent + "[ERROR] " + ex.Message);
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error processing directory {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при обработке директории {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"处理目录 {path} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+
+            for (int i = 0; i < subDirs.Length; i++)
+            {
+                PrintTree(subDirs[i], newIndent, i == subDirs.Length - 1, writer);
+            }
+
+            try
+            {
+                files = Directory.GetFiles(path);
+            }
+            catch (Exception ex)
+            {
+                writer.WriteLine(newIndent + "[ERROR] " + ex.Message);
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error processing files in {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при обработке файлов в {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"处理 {path} 中的文件时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                string fileName = Path.GetFileName(files[i]);
+                writer.WriteLine(newIndent + (i == files.Length - 1 ? "└─ " : "├─ ") + fileName);
+            }
+        }
+
+        private void btnSelectFolder_Click(object? sender, EventArgs e)
+        {
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = currentLanguage == "English" ? "Select mods folder" :
+                                          currentLanguage == "Russian" ? "Выберите папку с модами" :
+                                          "选择模组文件夹";
+                folderDialog.ShowNewFolderButton = false;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    selectedFolder = folderDialog.SelectedPath;
+                    txtStatus.Text = currentLanguage == "English" ? $"Selected mods folder: {selectedFolder} 📁\r\n" :
+                                    currentLanguage == "Russian" ? $"Выбрана папка с модами: {selectedFolder} 📁\r\n" :
+                                    $"已选择模组文件夹: {selectedFolder} 📁\r\n";
+                    saveFolder = selectedFolder;
+                    txtSavePath.Text = saveFolder;
+                }
+            }
+        }
+
+        private void btnSaveFolder_Click(object? sender, EventArgs e)
+        {
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = currentLanguage == "English" ? "Select save location" :
+                                          currentLanguage == "Russian" ? "Выберите папку для сохранения результата" :
+                                          "选择保存位置";
+                folderDialog.ShowNewFolderButton = true;
+                folderDialog.SelectedPath = saveFolder;
+
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    saveFolder = folderDialog.SelectedPath;
+                    txtSavePath.Text = saveFolder;
+                    txtStatus.Text += currentLanguage == "English" ? $"Save folder changed to: {saveFolder} 🗂️\r\n" :
+                                     currentLanguage == "Russian" ? $"Папка сохранения изменена на: {saveFolder} 🗂️\r\n" :
+                                     $"保存文件夹更改为: {saveFolder} 🗂️\r\n";
+                }
+            }
+        }
+
+        private void btnRun_Click(object? sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedFolder))
+            {
+                MessageBox.Show(
+                    currentLanguage == "English" ? "Please select a mods folder!" :
+                    currentLanguage == "Russian" ? "Пожалуйста, выберите папку с модами!" :
+                    "请先选择模组文件夹！",
+                    currentLanguage == "English" ? "Error" :
+                    currentLanguage == "Russian" ? "Ошибка" :
+                    "错误",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(saveFolder))
+            {
+                saveFolder = selectedFolder;
+                txtSavePath.Text = saveFolder;
+            }
+
+            string outputFile = Path.Combine(saveFolder, "ModFullData.txt");
+            string errorFile = Path.Combine(saveFolder, "ScanErrors.txt");
+
+            if (errorForm == null || errorForm.IsDisposed)
+            {
+                errorForm = new ErrorStatusForm(saveFolder, currentLanguage);
+                errorForm.UpdateLanguage(currentLanguage);
+                errorForm.Show(this);
+            }
+
+            txtStatus.Text = currentLanguage == "English" ? "Analysis started... ⏳\r\n" :
+                            currentLanguage == "Russian" ? "Сборка началась... ⏳\r\n" :
+                            "分析开始... ⏳\r\n";
+            if (File.Exists(errorFile)) File.Delete(errorFile);
+
+            using (StreamWriter writer = new StreamWriter(outputFile, false, Encoding.UTF8))
+            {
+                writer.WriteLine(currentLanguage == "English" ? $"Full mod data analysis started: {DateTime.Now}" :
+                                currentLanguage == "Russian" ? $"Полная сборка данных модов начата: {DateTime.Now}" :
+                                $"模组数据完整分析开始: {DateTime.Now}");
+                writer.WriteLine();
+
+                // Анализ корневой директории
+                writer.WriteLine(currentLanguage == "English" ? "Root Directory:" :
+                                currentLanguage == "Russian" ? "Корневая директория:" :
+                                "根目录:");
+                ProcessFilesInDirectory(selectedFolder, writer, true);
+                writer.WriteLine();
+
+                string[] modFolders = Directory.GetDirectories(selectedFolder);
+                foreach (var modPath in modFolders)
+                {
+                    try
+                    {
+                        string modName = Path.GetFileName(modPath);
+                        writer.WriteLine(currentLanguage == "English" ? $"Mod: {modName}" :
+                                        currentLanguage == "Russian" ? $"Мод: {modName}" :
+                                        $"模组: {modName}");
+                        writer.WriteLine(new string('-', 50));
+
+                        writer.WriteLine(currentLanguage == "English" ? "Directory Structure:" :
+                                        currentLanguage == "Russian" ? "Структура директорий:" :
+                                        "目录结构:");
+                        PrintTree(modPath, "", true, writer);
+                        writer.WriteLine();
+
+                        ProcessFilesInDirectory(modPath, writer, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Failed to process mod {modPath}: {ex.Message}" :
+                                        currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось обработать мод {modPath}: {ex.Message}" :
+                                        $"[错误] 无法处理模组 {modPath}: {ex.Message}");
+                        if (errorForm != null && !errorForm.IsDisposed)
+                            errorForm.AddError(currentLanguage == "English" ? $"General analysis error for mod {modPath}: {TranslateException(ex.Message, currentLanguage)}" :
+                                              currentLanguage == "Russian" ? $"Общая ошибка сборки для мода {modPath}: {TranslateException(ex.Message, currentLanguage)}" :
+                                              $"模组 {modPath} 的总体分析错误: {TranslateException(ex.Message, currentLanguage)}");
+                    }
+                }
+
+                writer.WriteLine(currentLanguage == "English" ? "Analysis completed. ✅" :
+                                currentLanguage == "Russian" ? "Сборка завершена. ✅" :
+                                "分析完成。 ✅");
+            }
+
+            txtStatus.Text += currentLanguage == "English" ? $"Analysis completed. File saved: {outputFile} 📄\r\n" :
+                             currentLanguage == "Russian" ? $"Сборка завершена. Файл сохранен: {outputFile} 📄\r\n" :
+                             $"分析完成。文件已保存: {outputFile} 📄\r\n";
+            if (File.Exists(errorFile) && new FileInfo(errorFile).Length > 0)
+                txtStatus.Text += currentLanguage == "English" ? $"Errors logged: {errorFile} ⚠️\r\n" :
+                                 currentLanguage == "Russian" ? $"Ошибки записаны: {errorFile} ⚠️\r\n" :
+                                 $"错误已记录: {errorFile} ⚠️\r\n";
+            if (errorForm != null && !errorForm.IsDisposed)
+                errorForm.CompleteScan();
+            if (errorForm != null && !errorForm.IsDisposed && errorForm.IsErrorLogEmpty())
+            {
+                errorForm.Close();
+            }
+        }
+
+        private void ProcessFilesInDirectory(string directory, StreamWriter writer, bool isRoot)
+        {
+            writer.WriteLine(currentLanguage == "English" ? "Text Files:" :
+                            currentLanguage == "Russian" ? "Текстовые файлы:" :
+                            "文本文件:");
+            try
+            {
+                string[] allFiles = isRoot ? Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly) : Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+                foreach (var file in allFiles)
+                {
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (selectedTextExtensions.Contains(ext))
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
+                                        currentLanguage == "Russian" ? $"Файл: {file}" :
+                                        $"文件: {file}");
+                        writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
+                                        currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
+                                        $"类型: {ext.TrimStart('.')}");
+                        writer.WriteLine(currentLanguage == "English" ? "Content:" :
+                                        currentLanguage == "Russian" ? "Содержимое:" :
+                                        "内容:");
+                        try
+                        {
+                            string content = File.ReadAllText(file, Encoding.UTF8);
+                            writer.WriteLine(content);
+                        }
+                        catch (Exception ex)
+                        {
+                            writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not read file: {ex.Message}" :
+                                            currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось прочитать файл: {ex.Message}" :
+                                            $"[错误] 无法读取文件: {ex.Message}");
+                            if (errorForm != null && !errorForm.IsDisposed)
+                                errorForm.AddError(currentLanguage == "English" ? $"Error reading file {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  currentLanguage == "Russian" ? $"Ошибка при чтении файла {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  $"读取文件 {file} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+                        }
+                        writer.WriteLine(new string('-', 50));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not scan text files: {ex.Message}" :
+                                currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось просканировать текстовые файлы: {ex.Message}" :
+                                $"[错误] 无法扫描文本文件: {ex.Message}");
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error scanning text files in {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при сканировании текстовых файлов в {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"扫描 {directory} 中的文本文件时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+            writer.WriteLine();
+
+            writer.WriteLine(currentLanguage == "English" ? "Image Files:" :
+                            currentLanguage == "Russian" ? "Изображения:" :
+                            "图像文件:");
+            try
+            {
+                string[] allFiles = isRoot ? Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly) : Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+                foreach (var file in allFiles)
+                {
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (selectedImageExtensions.Contains(ext))
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
+                                        currentLanguage == "Russian" ? $"Файл: {file}" :
+                                        $"文件: {file}");
+                        writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
+                                        currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
+                                        $"类型: {ext.TrimStart('.')}");
+                        try
+                        {
+                            using (Bitmap bitmap = new Bitmap(file))
+                            {
+                                int width = bitmap.Width;
+                                int height = bitmap.Height;
+                                long fileSize = new FileInfo(file).Length;
+                                writer.WriteLine(currentLanguage == "English" ? $"Dimensions: {width}x{height} pixels" :
+                                                currentLanguage == "Russian" ? $"Размеры: {width}x{height} пикселей" :
+                                                $"尺寸: {width}x{height} 像素");
+                                writer.WriteLine(currentLanguage == "English" ? $"File Size: {fileSize} bytes" :
+                                                currentLanguage == "Russian" ? $"Размер файла: {fileSize} байт" :
+                                                $"文件大小: {fileSize} 字节");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not process image: {ex.Message}" :
+                                            currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось обработать изображение: {ex.Message}" :
+                                            $"[错误] 无法处理图像: {ex.Message}");
+                            if (errorForm != null && !errorForm.IsDisposed)
+                                errorForm.AddError(currentLanguage == "English" ? $"Error processing image {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  currentLanguage == "Russian" ? $"Ошибка при обработке изображения {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  $"处理图像 {file} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+                        }
+                        writer.WriteLine(new string('-', 50));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not scan image files: {ex.Message}" :
+                                currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось просканировать изображения: {ex.Message}" :
+                                $"[错误] 无法扫描图像文件: {ex.Message}");
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error scanning image files in {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при сканировании изображений в {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"扫描 {directory} 中的图像文件时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+        }
+
+        private string TranslateException(string message, string language)
+        {
+            if (message.Contains("Access to the path") && message.Contains("is denied"))
+            {
+                return language == "English" ? "Access to the path is denied" :
+                       language == "Russian" ? "Доступ к пути запрещён" :
+                       "路径访问被拒绝";
+            }
+            else if (message.Contains("File Not Found"))
+            {
+                return language == "English" ? "File not found" :
+                       language == "Russian" ? "Файл не найден" :
+                       "文件未找到";
+            }
+            else if (message.Contains("Invalid Image Format"))
+            {
+                return language == "English" ? "Invalid image format" :
+                       language == "Russian" ? "Недопустимый формат изображения" :
+                       "无效的图像格式";
+            }
+            return message;
+        }
+
+        private void LogError(string errorMessage)
+        {
+            try
+            {
+                string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
+                File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {errorMessage}\r\n");
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void languageEnglish_Click(object? sender, EventArgs e)
+        {
+            currentLanguage = "English";
+            UpdateLanguage();
+            if (errorForm != null && !errorForm.IsDisposed)
+                errorForm.UpdateLanguage(currentLanguage);
+        }
+
+        private void languageRussian_Click(object? sender, EventArgs e)
+        {
+            currentLanguage = "Russian";
+            UpdateLanguage();
+            if (errorForm != null && !errorForm.IsDisposed)
+                errorForm.UpdateLanguage(currentLanguage);
+        }
+
+        private void languageChinese_Click(object? sender, EventArgs e)
+        {
+            currentLanguage = "Chinese";
+            UpdateLanguage();
+            if (errorForm != null && !errorForm.IsDisposed)
+                errorForm.UpdateLanguage(currentLanguage);
+        }
+
+        private void extensionsSettings_Click(object? sender, EventArgs e)
+        {
+            using (var settingsForm = new ExtensionSettingsForm(selectedTextExtensions, selectedImageExtensions, currentLanguage))
+            {
+                if (settingsForm.ShowDialog(this) == DialogResult.OK)
+                {
+                    selectedTextExtensions = settingsForm.SelectedTextExtensions;
+                    selectedImageExtensions = settingsForm.SelectedImageExtensions;
+                }
+            }
+        }
+    }
+}
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\Form1.Designer.cs
+Тип: cs
+Содержимое:
+namespace ModStructureCheckerApp
+{
+    partial class Form1
+    {
+        private System.ComponentModel.IContainer components = null;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+            menuStrip1 = new MenuStrip();
+            languageMenu = new ToolStripMenuItem();
+            languageEnglish = new ToolStripMenuItem();
+            languageRussian = new ToolStripMenuItem();
+            languageChinese = new ToolStripMenuItem();
+            extensionsSettingsMenu = new ToolStripMenuItem(); // Новое меню
+            btnSelectFolder = new Button();
+            btnRun = new Button();
+            txtStatus = new TextBox();
+            label1 = new Label();
+            btnSaveFolder = new Button();
+            txtSavePath = new TextBox();
+            label2 = new Label();
+            labelAuthor = new Label();
+            SuspendLayout();
+
+            // menuStrip1
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(430, 24);
+            menuStrip1.TabIndex = 8;
+            menuStrip1.Text = "menuStrip1";
+
+            // languageMenu
+            languageMenu.Name = "languageMenu";
+            languageMenu.Size = new Size(61, 20);
+            languageMenu.Text = "Language";
+            languageMenu.DropDownItems.AddRange(new ToolStripItem[] { languageEnglish, languageRussian, languageChinese });
+            menuStrip1.Items.Add(languageMenu);
+
+            // languageEnglish
+            languageEnglish.Name = "languageEnglish";
+            languageEnglish.Size = new Size(180, 22);
+            languageEnglish.Text = "English";
+            languageEnglish.Click += new EventHandler(languageEnglish_Click);
+
+            // languageRussian
+            languageRussian.Name = "languageRussian";
+            languageRussian.Size = new Size(180, 22);
+            languageRussian.Text = "Русский";
+            languageRussian.Click += new EventHandler(languageRussian_Click);
+
+            // languageChinese
+            languageChinese.Name = "languageChinese";
+            languageChinese.Size = new Size(180, 22);
+            languageChinese.Text = "中文";
+            languageChinese.Click += new EventHandler(languageChinese_Click);
+
+            // extensionsSettingsMenu
+            extensionsSettingsMenu.Name = "extensionsSettingsMenu";
+            extensionsSettingsMenu.Size = new Size(120, 20);
+            extensionsSettingsMenu.Text = "Extension Settings";
+            extensionsSettingsMenu.Click += new EventHandler(extensionsSettings_Click);
+            menuStrip1.Items.Add(extensionsSettingsMenu);
+
+            // btnSelectFolder
+            btnSelectFolder.Location = new Point(12, 36);
+            btnSelectFolder.Name = "btnSelectFolder";
+            btnSelectFolder.Size = new Size(150, 30);
+            btnSelectFolder.TabIndex = 0;
+            btnSelectFolder.Text = "Select Folder 📁";
+            btnSelectFolder.UseVisualStyleBackColor = true;
+            btnSelectFolder.Click += new EventHandler(btnSelectFolder_Click);
+
+            // btnRun
+            btnRun.Location = new Point(168, 36);
+            btnRun.Name = "btnRun";
+            btnRun.Size = new Size(150, 30);
+            btnRun.TabIndex = 1;
+            btnRun.Text = "Run Analysis ▶️";
+            btnRun.UseVisualStyleBackColor = true;
+            btnRun.Click += new EventHandler(btnRun_Click);
+
+            // txtStatus
+            txtStatus.Location = new Point(13, 106);
+            txtStatus.Multiline = true;
+            txtStatus.Name = "txtStatus";
+            txtStatus.ScrollBars = ScrollBars.Vertical;
+            txtStatus.Size = new Size(406, 138);
+            txtStatus.TabIndex = 2;
+
+            // label1
+            label1.AutoSize = true;
+            label1.Location = new Point(13, 79);
+            label1.Name = "label1";
+            label1.Size = new Size(61, 15);
+            label1.TabIndex = 3;
+            label1.Text = "Status: 📋";
+
+            // btnSaveFolder
+            btnSaveFolder.Location = new Point(12, 279);
+            btnSaveFolder.Name = "btnSaveFolder";
+            btnSaveFolder.Size = new Size(229, 30);
+            btnSaveFolder.TabIndex = 4;
+            btnSaveFolder.Text = "Select Save Folder 📂";
+            btnSaveFolder.UseVisualStyleBackColor = true;
+            btnSaveFolder.Click += new EventHandler(btnSaveFolder_Click);
+
+            // txtSavePath
+            txtSavePath.Location = new Point(12, 315);
+            txtSavePath.Name = "txtSavePath";
+            txtSavePath.Size = new Size(406, 23);
+            txtSavePath.TabIndex = 5;
+
+            // label2
+            label2.AutoSize = true;
+            label2.Location = new Point(13, 261);
+            label2.Name = "label2";
+            label2.Size = new Size(149, 15);
+            label2.TabIndex = 6;
+            label2.Text = "Save Folder: 🗂️";
+
+            // labelAuthor
+            labelAuthor.AutoSize = true;
+            labelAuthor.Location = new Point(12, 344);
+            labelAuthor.Name = "labelAuthor";
+            labelAuthor.Size = new Size(200, 15);
+            labelAuthor.TabIndex = 7;
+            labelAuthor.Text = "v1.0.0 by Arock (Built with Grok from xAI)";
+
+            // Form1
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(430, 374);
+            Controls.Add(menuStrip1);
+            Controls.Add(labelAuthor);
+            Controls.Add(label2);
+            Controls.Add(txtSavePath);
+            Controls.Add(btnSaveFolder);
+            Controls.Add(label1);
+            Controls.Add(txtStatus);
+            Controls.Add(btnRun);
+            Controls.Add(btnSelectFolder);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+            Name = "Form1";
+            Text = "Mod Structure Checker";
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        #endregion
+
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem languageMenu;
+        private ToolStripMenuItem languageEnglish;
+        private ToolStripMenuItem languageRussian;
+        private ToolStripMenuItem languageChinese;
+        private ToolStripMenuItem extensionsSettingsMenu; // Новое поле
+        private Button btnSelectFolder;
+        private Button btnRun;
+        private TextBox txtStatus;
+        private Label label1;
+        private Button btnSaveFolder;
+        private TextBox txtSavePath;
+        private Label label2;
+        private Label labelAuthor;
+    }
+}
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\LICENSE.txt
+Тип: txt
+Содержимое:
+MIT License
+
+Copyright (c) [year] [fullname]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\ModFullData.txt
+Тип: txt
+Содержимое:
+[ОШИБКА] Не удалось прочитать файл: The process cannot access the file 'D:\Projects\ModStructureCheckerApp\ModFullData.txt' because it is being used by another process.
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\Program.cs
+Тип: cs
+Содержимое:
+namespace ModStructureCheckerApp
+{
+    internal static class Program
+    {
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            // To customize application configuration such as set high DPI settings or default font,
+            // see https://aka.ms/applicationconfiguration.
+            ApplicationConfiguration.Initialize();
+            Application.Run(new Form1());
+        }
+    }
+}
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\README.txt
+Тип: txt
+Содержимое:
+Mod Structure Checker
+
+English
+Description:
+Mod Structure Checker is a Windows Forms application designed to streamline mod development for RimWorld by facilitating communication with neural networks (e.g., AI assistants like Grok). It generates a detailed report of mod folder structures, which helps neural networks analyze and troubleshoot errors in RimWorld mods efficiently.
+
+Features:
+- Select a folder containing RimWorld mods.
+- Choose a save location for the output file.
+- Generate a comprehensive report (ModFullData.txt) with:
+  - Directory structure of the mod.
+  - Contents of text files (.xml, .cs, .txt) for code analysis.
+  - Metadata of image files (.png, .jpg, .jpeg, .gif, .bmp) for asset verification.
+- Multi-language support: English, Russian, Chinese (Simplified).
+- Automatic language detection based on system settings.
+- Error logging and display in a separate window for easy debugging.
+
+Usage:
+1. Run the application.
+2. Click "Select Folder" to choose a RimWorld mod directory.
+3. Optionally, click "Select Save Folder" to specify where to save the report.
+4. Click "Run Analysis" to generate the report.
+5. Share the report with a neural network (e.g., Grok) to get help with mod errors.
+6. Use the "Language" menu to switch between English, Russian, or Chinese.
+
+System Requirements:
+- Operating System: Windows 7, 8, 10, or 11 (32-bit or 64-bit).
+- .NET 8.0 Runtime:
+  - Required to run the application. This is not pre-installed on all systems.
+  - Check your system architecture (32-bit or 64-bit):
+    - For 32-bit (x86) systems: Download from https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86
+    - For 64-bit (x64) systems: Download from https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64
+  - Installation: Run the downloaded installer and follow the on-screen instructions.
+  - Note: If you’re unsure about your system type, right-click 'This PC' or 'My Computer' → 'Properties' to check.
+- Disk Space: Approximately 5-10 MB for the application, plus additional space for generated reports.
+- No additional software required.
+
+Distribution:
+- The application is provided as two standalone executable files:
+  - ModStructureCheckerApp.exe (for 64-bit systems, win-x64)
+  - ModStructureCheckerApp.exe (for 32-bit systems, win-x86)
+- Download the appropriate version based on your system architecture and ensure .NET 8.0 Runtime is installed.
+
+Author:
+Developed by Arock with assistance from Grok (xAI).
+
+Русский
+Описание:
+Mod Structure Checker — это приложение на Windows Forms, созданное для упрощения разработки модов для RimWorld путём улучшения взаимодействия с нейросетями (например, ИИ-помощниками вроде Grok). Программа создаёт подробный отчёт о структуре папок модов, который помогает нейросетям быстро анализировать и находить решения для ошибок в модах RimWorld.
+
+Возможности:
+- Выбор папки с модами RimWorld.
+- Указание места сохранения отчёта.
+- Генерация полного отчёта (ModFullData.txt) с:
+  - Структурой директорий мода.
+  - Содержимым текстовых файлов (.xml, .cs, .txt) для анализа кода.
+  - Метаданными файлов изображений (.png, .jpg, .jpeg, .gif, .bmp) для проверки ресурсов.
+- Поддержка нескольких языков: английский, русский, китайский (упрощённый).
+- Автоматическое определение языка на основе системных настроек.
+- Логирование ошибок и их отображение в отдельном окне для удобной отладки.
+
+Использование:
+1. Запустите приложение.
+2. Нажмите "Выбрать папку" для выбора директории с модами RimWorld.
+3. При необходимости нажмите "Выбрать папку сохранения" для указания места сохранения отчёта.
+4. Нажмите "Запустить сборку" для генерации отчёта.
+5. Передайте отчёт нейросети (например, Grok), чтобы получить помощь с ошибками мода.
+6. Используйте меню "Language" для переключения между английским, русским или китайским.
+
+Требования к системе:
+- Операционная система: Windows 7, 8, 10 или 11 (32-бит или 64-бит).
+- .NET 8.0 Runtime:
+  - Требуется для работы приложения. На некоторых системах он может быть отсутствовать.
+  - Проверьте архитектуру вашей системы (32-бит или 64-бит):
+    - Для 32-битных (x86) систем: Скачайте отсюда https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86
+    - Для 64-битных (x64) систем: Скачайте отсюда https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64
+  - Установка: Запустите скачанный установщик и следуйте инструкциям на экране.
+  - Примечание: Если не уверены в типе системы, щёлкните правой кнопкой по "Этот компьютер" → "Свойства" для проверки.
+- Место на диске: Примерно 5-10 МБ для приложения, плюс дополнительное место для отчётов.
+- Дополнительное ПО не требуется.
+
+Распространение:
+- Приложение предоставляется в виде двух автономных исполняемых файлов:
+  - ModStructureCheckerApp.exe (для 64-битных систем, win-x64)
+  - ModStructureCheckerApp.exe (для 32-битных систем, win-x86)
+- Скачайте подходящую версию в зависимости от архитектуры вашей системы и убедитесь, что установлен .NET 8.0 Runtime.
+
+Автор:
+Разработано Arock при поддержке Grok от xAI.
+
+中文 (简体)
+描述:
+Mod Structure Checker 是一款 Windows Forms 应用程序，旨在通过优化与神经网络（例如 Grok 等 AI 助手）的交互来简化《RimWorld》的模组开发。它会生成模组文件夹结构的详细报告，帮助神经网络快速分析并解决《RimWorld》模组中的错误。
+
+功能:
+- 选择包含《RimWorld》模组的文件夹。
+- 指定报告的保存位置。
+- 生成全面报告 (ModFullData.txt)，包含：
+  - 模组的目录结构。
+  - 文本文件内容 (.xml, .cs, .txt) 用于代码分析。
+  - 图像文件元データ (.png, .jpg, .jpeg, .gif, .bmp) 用于资源验证。
+- 支持多语言：英语、俄语、简体中文。
+- 根据系统设置自动检测语言。
+- 在单独窗口中记录和显示错误，便于调试。
+
+使用方法:
+1. 运行应用程序。
+2. 点击“选择文件夹”以选择《RimWorld》模组目录。
+3. 可选：点击“选择保存文件夹”以指定报告保存位置。
+4. 点击“运行分析”以生成报告。
+5. 将报告分享给神经网络（例如 Grok），以获取模组错误的解决方案。
+6. 使用“Language”菜单在英语、俄语或中文之间切换。
+
+系统要求:
+- 操作系统：Windows 7、8、10 或 11（32 位或 64 位）。
+- .NET 8.0 Runtime:
+  - 运行应用程序所需。某些系统中可能未预装。
+  - 检查您的系统架构（32 位或 64 位）：
+    - 对于 32 位（x86）系统：从 https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86 下载
+    - 对于 64 位（x64）系统：从 https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64 下载
+  - 安装：运行下载的安装程序并按照屏幕上的说明操作。
+  - 注意：如果不确定系统类型，右键点击“此电脑”→“属性”查看。
+- 磁盘空间：应用程序约需 5-10 MB，外加生成的报告所需空间。
+- 无需额外软件。
+
+分发:
+- 应用程序提供为两个独立的可执行文件：
+  - ModStructureCheckerApp.exe（适用于 64 位系统，win-x64）
+  - ModStructureCheckerApp.exe（适用于 32 位系统，win-x86）
+- 根据您的系统架构下载适当的版本，并确保已安装 .NET 8.0 Runtime。
+
+作者:
+由 Arock 开发，Grok（xAI）提供协助。
+--------------------------------------------------
+
+Изображения:
+
+Мод: .git
+--------------------------------------------------
+Структура директорий:
+└─ .git
+   ├─ hooks
+   │  ├─ applypatch-msg.sample
+   │  ├─ commit-msg.sample
+   │  ├─ fsmonitor-watchman.sample
+   │  ├─ post-update.sample
+   │  ├─ pre-applypatch.sample
+   │  ├─ pre-commit.sample
+   │  ├─ pre-merge-commit.sample
+   │  ├─ pre-push.sample
+   │  ├─ pre-rebase.sample
+   │  ├─ pre-receive.sample
+   │  ├─ prepare-commit-msg.sample
+   │  ├─ push-to-checkout.sample
+   │  ├─ sendemail-validate.sample
+   │  └─ update.sample
+   ├─ info
+   │  └─ exclude
+   ├─ logs
+   │  └─ refs
+   │     ├─ heads
+   │     │  └─ master
+   │     └─ remotes
+   │        └─ origin
+   │           ├─ main
+   │           └─ master
+   │  └─ HEAD
+   ├─ objects
+   │  ├─ 1e
+   │  │  └─ 233e3d59b76dbc8f2f448c0ca764fd213a1f86
+   │  ├─ 1f
+   │  │  └─ f0c423042b46cb1d617b81efb715defbe8054d
+   │  ├─ 2c
+   │  │  └─ 8804a9b35e3457c8ed2a749345a84351f3960a
+   │  ├─ 4b
+   │  │  └─ 9817a0113870ac463105383f52b590411e3a86
+   │  ├─ 72
+   │  │  └─ 48a8aabad46fc41661eed9ebb9edb38dd1926f
+   │  ├─ 88
+   │  │  └─ 6982068460d461209f844c04156cf3bbb3cb18
+   │  ├─ 89
+   │  │  └─ 416dfaf83300a7958fd8e56e869f37c8f036c3
+   │  ├─ 8a
+   │  │  └─ a26455d23acf904be3ed9dfb3a3efe3e49245a
+   │  ├─ 8b
+   │  │  └─ 2ff64a11300290ddac7e7d9bc26e5e0a766508
+   │  ├─ 91
+   │  │  └─ 07e373925a49fe6fdfaad46c8cd46c4a86a0ba
+   │  ├─ 94
+   │  │  └─ 91a2fda28342ab358eaf234e1afe0c07a53d62
+   │  ├─ a4
+   │  │  └─ fe18bdd10bd4965cff0a8816acd768579f1ddc
+   │  ├─ a5
+   │  │  └─ 2bf8121fe172fe22a6571eb428c0aacaf4a3c6
+   │  ├─ aa
+   │  │  └─ 28e3d0651ce14f0eafae29fe6487f0133e5bdc
+   │  ├─ af
+   │  │  └─ ce96df52a5a2c68b0c24e0e749e0cae84492c2
+   │  ├─ b1
+   │  │  └─ ef30ae9f113d285491ba03a4efd5b4cc8f1095
+   │  ├─ b3
+   │  │  └─ acb8afccf8d9364372a77348a9e95b34b96020
+   │  ├─ b4
+   │  │  ├─ ab9b42b8cb511dee7b4f54e785e5eaa35e1a68
+   │  │  └─ bde65e55210a9ff30b566a986671c8412e755a
+   │  ├─ b7
+   │  │  └─ a79b20d0064e4416f8c63deb1caf67eb72d2c5
+   │  ├─ bb
+   │  │  ├─ 27151b75dcb2f252898cbdc9ee1491f9dd9457
+   │  │  └─ e4ff3d6791edb93b7d9d2b69fd577829f694e5
+   │  ├─ bd
+   │  │  └─ e0c04b757851e5287bd119822a61141a0642d6
+   │  ├─ c0
+   │  │  └─ 3296c785dc943833761e256db07235493e869d
+   │  ├─ c3
+   │  │  └─ da4fba763c929eaaccd37bd037c1bfcce4bf4a
+   │  ├─ c8
+   │  │  ├─ 2254baaa3a07342350f8f74a7ab67a635e3c2a
+   │  │  └─ d9487423662900987bc2d2060b5415e7e12182
+   │  ├─ e9
+   │  │  └─ dfb67fde2d1dd238b474f4f44403412f8a8b8d
+   │  ├─ fb
+   │  │  └─ becedecf232ee3a5cdd1d3dfc59568512e1d61
+   │  ├─ info
+   │  └─ pack
+   └─ refs
+      ├─ heads
+      │  └─ master
+      ├─ remotes
+      │  └─ origin
+      │     ├─ main
+      │     └─ master
+      └─ tags
+   ├─ COMMIT_EDITMSG
+   ├─ config
+   ├─ description
+   ├─ FETCH_HEAD
+   ├─ HEAD
+   ├─ index
+   ├─ ms-persist.xml
+   └─ ORIG_HEAD
+
+Текстовые файлы:
+Файл: D:\Projects\ModStructureCheckerApp\.git\ms-persist.xml
+Тип: xml
+Содержимое:
+<?xml version="1.0" encoding="utf-8"?>
+<PendingCommit>
+  <CommitComment />
+  <PinnedBranches>
+    <PinnedBranch Name="refs/heads/master" />
+  </PinnedBranches>
+  <PublishPrompt Enabled="True" />
+  <ActiveAccountPrompt Enabled="True" />
+  <RepositorySorts />
+  <CreatePullRequest_DefaultTargetBranch />
+</PendingCommit>
+--------------------------------------------------
+
+Изображения:
+Мод: .vs
+--------------------------------------------------
+Структура директорий:
+└─ .vs
+   ├─ ModStructureCheckerApp
+   │  ├─ DesignTimeBuild
+   │  │  └─ .dtbcache.v2
+   │  ├─ FileContentIndex
+   │  │  ├─ 11c2f53e-5f12-454d-b9d1-321710e72223.vsidx
+   │  │  ├─ 3ddcf8ae-4554-4dbb-9ed4-7ea13159b451.vsidx
+   │  │  ├─ 6500a2e8-f3d8-4b90-8ab0-8d607cc0d175.vsidx
+   │  │  ├─ e6aa6d51-0d5a-4e2b-96d8-899ce37e35df.vsidx
+   │  │  └─ ec986c5c-1545-46af-a04c-67e3099239f1.vsidx
+   │  └─ v17
+   │     └─ ResourceExplorer
+   │        └─ settings.json
+   │     ├─ .futdcache.v2
+   │     ├─ .suo
+   │     ├─ .wsuo
+   │     ├─ DocumentLayout.backup.json
+   │     └─ DocumentLayout.json
+   └─ ProjectEvaluation
+      ├─ modstructurecheckerapp.metadata.v9.bin
+      ├─ modstructurecheckerapp.projects.v9.bin
+      └─ modstructurecheckerapp.strings.v9.bin
+
+Текстовые файлы:
+
+Изображения:
+Мод: bin
+--------------------------------------------------
+Структура директорий:
+└─ bin
+   ├─ Debug
+   │  └─ net8.0-windows
+   │     ├─ ModStructureCheckerApp.deps.json
+   │     ├─ ModStructureCheckerApp.dll
+   │     ├─ ModStructureCheckerApp.exe
+   │     ├─ ModStructureCheckerApp.pdb
+   │     └─ ModStructureCheckerApp.runtimeconfig.json
+   └─ Release
+      └─ net8.0-windows
+         ├─ ModStructureCheckerApp-release.zip
+         ├─ ModStructureCheckerApp.deps.json
+         ├─ ModStructureCheckerApp.dll
+         ├─ ModStructureCheckerApp.exe
+         ├─ ModStructureCheckerApp.ico
+         ├─ ModStructureCheckerApp.pdb
+         ├─ ModStructureCheckerApp.runtimeconfig.json
+         └─ README.txt
+
+Текстовые файлы:
+Файл: D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\README.txt
+Тип: txt
+Содержимое:
+Mod Structure Checker
+
+English
+Description:
+Mod Structure Checker is a Windows Forms application designed to streamline mod development for RimWorld by facilitating communication with neural networks (e.g., AI assistants like Grok). It generates a detailed report of mod folder structures, which helps neural networks analyze and troubleshoot errors in RimWorld mods efficiently.
+
+Features:
+- Select a folder containing RimWorld mods.
+- Choose a save location for the output file.
+- Generate a comprehensive report (ModFullData.txt) with:
+  - Directory structure of the mod.
+  - Contents of text files (.xml, .cs, .txt) for code analysis.
+  - Metadata of image files (.png, .jpg, .jpeg, .gif, .bmp) for asset verification.
+- Multi-language support: English, Russian, Chinese (Simplified).
+- Automatic language detection based on system settings.
+- Error logging and display in a separate window for easy debugging.
+
+Usage:
+1. Run the application.
+2. Click "Select Folder" to choose a RimWorld mod directory.
+3. Optionally, click "Select Save Folder" to specify where to save the report.
+4. Click "Run Analysis" to generate the report.
+5. Share the report with a neural network (e.g., Grok) to get help with mod errors.
+6. Use the "Language" menu to switch between English, Russian, or Chinese.
+
+System Requirements:
+- Operating System: Windows 7, 8, 10, or 11 (32-bit or 64-bit).
+- .NET 8.0 Runtime:
+  - Required to run the application. This is not pre-installed on all systems.
+  - Check your system architecture (32-bit or 64-bit):
+    - For 32-bit (x86) systems: Download from https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86
+    - For 64-bit (x64) systems: Download from https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64
+  - Installation: Run the downloaded installer and follow the on-screen instructions.
+  - Note: If you’re unsure about your system type, right-click 'This PC' or 'My Computer' → 'Properties' to check.
+- Disk Space: Approximately 5-10 MB for the application, plus additional space for generated reports.
+- No additional software required.
+
+Distribution:
+- The application is provided as two standalone executable files:
+  - ModStructureCheckerApp.exe (for 64-bit systems, win-x64)
+  - ModStructureCheckerApp.exe (for 32-bit systems, win-x86)
+- Download the appropriate version based on your system architecture and ensure .NET 8.0 Runtime is installed.
+
+Author:
+Developed by Arock with assistance from Grok (xAI).
+
+Русский
+Описание:
+Mod Structure Checker — это приложение на Windows Forms, созданное для упрощения разработки модов для RimWorld путём улучшения взаимодействия с нейросетями (например, ИИ-помощниками вроде Grok). Программа создаёт подробный отчёт о структуре папок модов, который помогает нейросетям быстро анализировать и находить решения для ошибок в модах RimWorld.
+
+Возможности:
+- Выбор папки с модами RimWorld.
+- Указание места сохранения отчёта.
+- Генерация полного отчёта (ModFullData.txt) с:
+  - Структурой директорий мода.
+  - Содержимым текстовых файлов (.xml, .cs, .txt) для анализа кода.
+  - Метаданными файлов изображений (.png, .jpg, .jpeg, .gif, .bmp) для проверки ресурсов.
+- Поддержка нескольких языков: английский, русский, китайский (упрощённый).
+- Автоматическое определение языка на основе системных настроек.
+- Логирование ошибок и их отображение в отдельном окне для удобной отладки.
+
+Использование:
+1. Запустите приложение.
+2. Нажмите "Выбрать папку" для выбора директории с модами RimWorld.
+3. При необходимости нажмите "Выбрать папку сохранения" для указания места сохранения отчёта.
+4. Нажмите "Запустить сборку" для генерации отчёта.
+5. Передайте отчёт нейросети (например, Grok), чтобы получить помощь с ошибками мода.
+6. Используйте меню "Language" для переключения между английским, русским или китайским.
+
+Требования к системе:
+- Операционная система: Windows 7, 8, 10 или 11 (32-бит или 64-бит).
+- .NET 8.0 Runtime:
+  - Требуется для работы приложения. На некоторых системах он может быть отсутствовать.
+  - Проверьте архитектуру вашей системы (32-бит или 64-бит):
+    - Для 32-битных (x86) систем: Скачайте отсюда https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86
+    - Для 64-битных (x64) систем: Скачайте отсюда https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64
+  - Установка: Запустите скачанный установщик и следуйте инструкциям на экране.
+  - Примечание: Если не уверены в типе системы, щёлкните правой кнопкой по "Этот компьютер" → "Свойства" для проверки.
+- Место на диске: Примерно 5-10 МБ для приложения, плюс дополнительное место для отчётов.
+- Дополнительное ПО не требуется.
+
+Распространение:
+- Приложение предоставляется в виде двух автономных исполняемых файлов:
+  - ModStructureCheckerApp.exe (для 64-битных систем, win-x64)
+  - ModStructureCheckerApp.exe (для 32-битных систем, win-x86)
+- Скачайте подходящую версию в зависимости от архитектуры вашей системы и убедитесь, что установлен .NET 8.0 Runtime.
+
+Автор:
+Разработано Arock при поддержке Grok от xAI.
+
+中文 (简体)
+描述:
+Mod Structure Checker 是一款 Windows Forms 应用程序，旨在通过优化与神经网络（例如 Grok 等 AI 助手）的交互来简化《RimWorld》的模组开发。它会生成模组文件夹结构的详细报告，帮助神经网络快速分析并解决《RimWorld》模组中的错误。
+
+功能:
+- 选择包含《RimWorld》模组的文件夹。
+- 指定报告的保存位置。
+- 生成全面报告 (ModFullData.txt)，包含：
+  - 模组的目录结构。
+  - 文本文件内容 (.xml, .cs, .txt) 用于代码分析。
+  - 图像文件元データ (.png, .jpg, .jpeg, .gif, .bmp) 用于资源验证。
+- 支持多语言：英语、俄语、简体中文。
+- 根据系统设置自动检测语言。
+- 在单独窗口中记录和显示错误，便于调试。
+
+使用方法:
+1. 运行应用程序。
+2. 点击“选择文件夹”以选择《RimWorld》模组目录。
+3. 可选：点击“选择保存文件夹”以指定报告保存位置。
+4. 点击“运行分析”以生成报告。
+5. 将报告分享给神经网络（例如 Grok），以获取模组错误的解决方案。
+6. 使用“Language”菜单在英语、俄语或中文之间切换。
+
+系统要求:
+- 操作系统：Windows 7、8、10 或 11（32 位或 64 位）。
+- .NET 8.0 Runtime:
+  - 运行应用程序所需。某些系统中可能未预装。
+  - 检查您的系统架构（32 位或 64 位）：
+    - 对于 32 位（x86）系统：从 https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x86 下载
+    - 对于 64 位（x64）系统：从 https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime-8.0.0-win-x64 下载
+  - 安装：运行下载的安装程序并按照屏幕上的说明操作。
+  - 注意：如果不确定系统类型，右键点击“此电脑”→“属性”查看。
+- 磁盘空间：应用程序约需 5-10 MB，外加生成的报告所需空间。
+- 无需额外软件。
+
+分发:
+- 应用程序提供为两个独立的可执行文件：
+  - ModStructureCheckerApp.exe（适用于 64 位系统，win-x64）
+  - ModStructureCheckerApp.exe（适用于 32 位系统，win-x86）
+- 根据您的系统架构下载适当的版本，并确保已安装 .NET 8.0 Runtime。
+
+作者:
+由 Arock 开发，Grok（xAI）提供协助。
+--------------------------------------------------
+
+Изображения:
+Мод: obj
+--------------------------------------------------
+Структура директорий:
+└─ obj
+   ├─ Debug
+   │  └─ net8.0-windows
+   │     ├─ ref
+   │     │  └─ ModStructureCheckerApp.dll
+   │     ├─ refint
+   │     │  └─ ModStructureCheckerApp.dll
+   │     └─ TempPE
+   │        ├─ Resources.Designer.cs.dll
+   │        └─ Resources.en.Designer.cs.dll
+   │     ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+   │     ├─ apphost.exe
+   │     ├─ ModStructureCheckerApp.AssemblyInfo.cs
+   │     ├─ ModStructureCheckerApp.AssemblyInfoInputs.cache
+   │     ├─ ModStructureCheckerApp.assets.cache
+   │     ├─ ModStructureCheckerApp.csproj.BuildWithSkipAnalyzers
+   │     ├─ ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+   │     ├─ ModStructureCheckerApp.csproj.FileListAbsolute.txt
+   │     ├─ ModStructureCheckerApp.csproj.GenerateResource.cache
+   │     ├─ ModStructureCheckerApp.designer.deps.json
+   │     ├─ ModStructureCheckerApp.designer.runtimeconfig.json
+   │     ├─ ModStructureCheckerApp.dll
+   │     ├─ ModStructureCheckerApp.Form1.resources
+   │     ├─ ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+   │     ├─ ModStructureCheckerApp.genruntimeconfig.cache
+   │     ├─ ModStructureCheckerApp.GlobalUsings.g.cs
+   │     └─ ModStructureCheckerApp.pdb
+   └─ Release
+      └─ net8.0-windows
+         ├─ ref
+         │  └─ ModStructureCheckerApp.dll
+         ├─ refint
+         │  └─ ModStructureCheckerApp.dll
+         ├─ TempPE
+         │  ├─ Resource1.Designer.cs.dll
+         │  ├─ Resources.Designer.cs.dll
+         │  ├─ Resources.en.Designer.cs.dll
+         │  └─ Resources.zh-CN.Designer.cs.dll
+         └─ win-x64
+            ├─ ref
+            │  └─ ModStructureCheckerApp.dll
+            └─ refint
+               └─ ModStructureCheckerApp.dll
+            ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+            ├─ apphost.exe
+            ├─ ModStruc.0C339A0D.Up2Date
+            ├─ ModStructureCheckerApp.AssemblyInfo.cs
+            ├─ ModStructureCheckerApp.AssemblyInfoInputs.cache
+            ├─ ModStructureCheckerApp.assets.cache
+            ├─ ModStructureCheckerApp.csproj.BuildWithSkipAnalyzers
+            ├─ ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+            ├─ ModStructureCheckerApp.csproj.FileListAbsolute.txt
+            ├─ ModStructureCheckerApp.csproj.GenerateResource.cache
+            ├─ ModStructureCheckerApp.designer.deps.json
+            ├─ ModStructureCheckerApp.designer.runtimeconfig.json
+            ├─ ModStructureCheckerApp.dll
+            ├─ ModStructureCheckerApp.ErrorStatusForm.resources
+            ├─ ModStructureCheckerApp.Form1.resources
+            ├─ ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+            ├─ ModStructureCheckerApp.genruntimeconfig.cache
+            ├─ ModStructureCheckerApp.GlobalUsings.g.cs
+            └─ ModStructureCheckerApp.pdb
+         ├─ .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+         ├─ apphost.exe
+         ├─ ModStructureCheckerApp.AssemblyInfo.cs
+         ├─ ModStructureCheckerApp.AssemblyInfoInputs.cache
+         ├─ ModStructureCheckerApp.assets.cache
+         ├─ ModStructureCheckerApp.csproj.BuildWithSkipAnalyzers
+         ├─ ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+         ├─ ModStructureCheckerApp.csproj.FileListAbsolute.txt
+         ├─ ModStructureCheckerApp.csproj.GenerateResource.cache
+         ├─ ModStructureCheckerApp.designer.deps.json
+         ├─ ModStructureCheckerApp.designer.runtimeconfig.json
+         ├─ ModStructureCheckerApp.dll
+         ├─ ModStructureCheckerApp.ErrorStatusForm.resources
+         ├─ ModStructureCheckerApp.Form1.resources
+         ├─ ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+         ├─ ModStructureCheckerApp.genruntimeconfig.cache
+         ├─ ModStructureCheckerApp.GlobalUsings.g.cs
+         ├─ ModStructureCheckerApp.pdb
+         └─ ModStructureCheckerApp.sourcelink.json
+   ├─ ModStructureCheckerApp.csproj.nuget.dgspec.json
+   ├─ ModStructureCheckerApp.csproj.nuget.g.props
+   ├─ ModStructureCheckerApp.csproj.nuget.g.targets
+   ├─ project.assets.json
+   └─ project.nuget.cache
+
+Текстовые файлы:
+Файл: D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+Тип: cs
+Содержимое:
+// <autogenerated />
+using System;
+using System.Reflection;
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute(".NETCoreApp,Version=v8.0", FrameworkDisplayName = ".NET 8.0")]
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.AssemblyInfo.cs
+Тип: cs
+Содержимое:
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код создан программой.
+//     Исполняемая версия:4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильной работе и будут потеряны в случае
+//     повторной генерации кода.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+using System;
+using System.Reflection;
+
+[assembly: System.Reflection.AssemblyCompanyAttribute("Arock")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © Arock 2025")]
+[assembly: System.Reflection.AssemblyDescriptionAttribute("Инструмент для анализа модов RimWorld. Собрано с помощью Grok от xAI.")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyProductAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyTitleAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
+
+// Создано классом WriteCodeFragment MSBuild.
+
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.csproj.FileListAbsolute.txt
+Тип: txt
+Содержимое:
+D:\Projects\ModStructureCheckerApp\bin\Debug\net8.0-windows\ModStructureCheckerApp.exe
+D:\Projects\ModStructureCheckerApp\bin\Debug\net8.0-windows\ModStructureCheckerApp.deps.json
+D:\Projects\ModStructureCheckerApp\bin\Debug\net8.0-windows\ModStructureCheckerApp.runtimeconfig.json
+D:\Projects\ModStructureCheckerApp\bin\Debug\net8.0-windows\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\bin\Debug\net8.0-windows\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.Form1.resources
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.csproj.GenerateResource.cache
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.AssemblyInfoInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.AssemblyInfo.cs
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\refint\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.genruntimeconfig.cache
+D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ref\ModStructureCheckerApp.dll
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Debug\net8.0-windows\ModStructureCheckerApp.GlobalUsings.g.cs
+Тип: cs
+Содержимое:
+// <auto-generated/>
+global using global::System;
+global using global::System.Collections.Generic;
+global using global::System.Drawing;
+global using global::System.IO;
+global using global::System.Linq;
+global using global::System.Net.Http;
+global using global::System.Threading;
+global using global::System.Threading.Tasks;
+global using global::System.Windows.Forms;
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+Тип: cs
+Содержимое:
+// <autogenerated />
+using System;
+using System.Reflection;
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute(".NETCoreApp,Version=v8.0", FrameworkDisplayName = ".NET 8.0")]
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.AssemblyInfo.cs
+Тип: cs
+Содержимое:
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код создан программой.
+//     Исполняемая версия:4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильной работе и будут потеряны в случае
+//     повторной генерации кода.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+using System;
+using System.Reflection;
+
+[assembly: System.Reflection.AssemblyCompanyAttribute("Arock")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © Arock 2025")]
+[assembly: System.Reflection.AssemblyDescriptionAttribute("Инструмент для анализа модов RimWorld. Собрано с помощью Grok от xAI.")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9107e373925a49fe6fdfaad46c8cd46c4a86a0ba")]
+[assembly: System.Reflection.AssemblyProductAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyTitleAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
+
+// Создано классом WriteCodeFragment MSBuild.
+
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.csproj.FileListAbsolute.txt
+Тип: txt
+Содержимое:
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.exe
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.ico
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\README.txt
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.deps.json
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.runtimeconfig.json
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.ErrorStatusForm.resources
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.Form1.resources
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.csproj.GenerateResource.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.AssemblyInfoInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.AssemblyInfo.cs
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.sourcelink.json
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\refint\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.genruntimeconfig.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ref\ModStructureCheckerApp.dll
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\ModStructureCheckerApp.GlobalUsings.g.cs
+Тип: cs
+Содержимое:
+// <auto-generated/>
+global using global::System;
+global using global::System.Collections.Generic;
+global using global::System.Drawing;
+global using global::System.IO;
+global using global::System.Linq;
+global using global::System.Net.Http;
+global using global::System.Threading;
+global using global::System.Threading.Tasks;
+global using global::System.Windows.Forms;
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+Тип: cs
+Содержимое:
+// <autogenerated />
+using System;
+using System.Reflection;
+[assembly: global::System.Runtime.Versioning.TargetFrameworkAttribute(".NETCoreApp,Version=v8.0", FrameworkDisplayName = ".NET 8.0")]
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.AssemblyInfo.cs
+Тип: cs
+Содержимое:
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     Этот код создан программой.
+//     Исполняемая версия:4.0.30319.42000
+//
+//     Изменения в этом файле могут привести к неправильной работе и будут потеряны в случае
+//     повторной генерации кода.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+using System;
+using System.Reflection;
+
+[assembly: System.Reflection.AssemblyCompanyAttribute("Arock")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © Arock 2025")]
+[assembly: System.Reflection.AssemblyDescriptionAttribute("Инструмент для анализа модов RimWorld. Собрано с помощью Grok от xAI.")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyProductAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyTitleAttribute("ModStructureCheckerApp")]
+[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
+
+// Создано классом WriteCodeFragment MSBuild.
+
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.csproj.FileListAbsolute.txt
+Тип: txt
+Содержимое:
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.exe
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.ico
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\README.txt
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.deps.json
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.runtimeconfig.json
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.CSharp.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.VisualBasic.Core.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.Win32.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.Win32.Registry.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.AppContext.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Buffers.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Collections.Concurrent.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Collections.Immutable.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Collections.NonGeneric.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Collections.Specialized.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Collections.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.Annotations.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.DataAnnotations.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.EventBasedAsync.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.TypeConverter.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ComponentModel.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Configuration.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Console.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Core.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Data.Common.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Data.DataSetExtensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Data.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.Contracts.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.Debug.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.DiagnosticSource.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.FileVersionInfo.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.Process.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.StackTrace.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.TextWriterTraceListener.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.Tools.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.TraceSource.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.Tracing.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Drawing.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Dynamic.Runtime.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Formats.Asn1.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Formats.Tar.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Globalization.Calendars.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Globalization.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Globalization.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Compression.Brotli.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Compression.FileSystem.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Compression.ZipFile.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Compression.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.FileSystem.AccessControl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.FileSystem.DriveInfo.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.FileSystem.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.FileSystem.Watcher.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.FileSystem.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.IsolatedStorage.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.MemoryMappedFiles.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Pipes.AccessControl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Pipes.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.UnmanagedMemoryStream.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Linq.Expressions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Linq.Parallel.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Linq.Queryable.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Linq.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Memory.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Http.Json.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Http.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.HttpListener.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Mail.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.NameResolution.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.NetworkInformation.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Ping.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Quic.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Requests.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Security.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.ServicePoint.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.Sockets.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.WebClient.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.WebHeaderCollection.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.WebProxy.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.WebSockets.Client.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.WebSockets.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Net.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Numerics.Vectors.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Numerics.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ObjectModel.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Private.CoreLib.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Private.DataContractSerialization.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Private.Uri.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Private.Xml.Linq.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Private.Xml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.DispatchProxy.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Emit.ILGeneration.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Emit.Lightweight.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Emit.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Metadata.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.TypeExtensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Reflection.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Resources.Reader.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Resources.ResourceManager.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Resources.Writer.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.CompilerServices.Unsafe.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.CompilerServices.VisualC.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Handles.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.InteropServices.JavaScript.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.InteropServices.RuntimeInformation.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.InteropServices.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Intrinsics.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Loader.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Numerics.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Serialization.Formatters.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Serialization.Json.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Serialization.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Serialization.Xml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.Serialization.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Runtime.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.AccessControl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Claims.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Algorithms.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Cng.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Csp.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Encoding.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.OpenSsl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.X509Certificates.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Principal.Windows.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Principal.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.SecureString.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ServiceModel.Web.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ServiceProcess.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.Encoding.CodePages.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.Encoding.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.Encoding.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.Encodings.Web.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.Json.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Text.RegularExpressions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Channels.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Overlapped.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Tasks.Dataflow.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Tasks.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Tasks.Parallel.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Tasks.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Thread.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.ThreadPool.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.Timer.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Transactions.Local.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Transactions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.ValueTuple.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Web.HttpUtility.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Web.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.Linq.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.ReaderWriter.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.Serialization.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.XDocument.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.XPath.XDocument.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.XPath.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.XmlDocument.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.XmlSerializer.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\mscorlib.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\netstandard.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Accessibility.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\DirectWriteForwarder.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.VisualBasic.Forms.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.VisualBasic.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.Win32.Registry.AccessControl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.Win32.SystemEvents.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationCore.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework-SystemCore.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework-SystemData.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework-SystemDrawing.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework-SystemXml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework-SystemXmlLinq.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.Aero.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.Aero2.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.AeroLite.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.Classic.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.Luna.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.Royale.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationFramework.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationUI.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ReachFramework.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.CodeDom.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Configuration.ConfigurationManager.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Design.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.EventLog.Messages.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.EventLog.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Diagnostics.PerformanceCounter.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.DirectoryServices.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Drawing.Common.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Drawing.Design.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Drawing.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Packaging.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Printing.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Resources.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Pkcs.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.ProtectedData.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Cryptography.Xml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Security.Permissions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Threading.AccessControl.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Controls.Ribbon.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Extensions.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Forms.Design.Editors.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Forms.Design.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Forms.Primitives.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Forms.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Input.Manipulations.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Windows.Presentation.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.Xaml.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\UIAutomationClient.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\UIAutomationClientSideProviders.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\UIAutomationProvider.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\UIAutomationTypes.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\WindowsBase.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\WindowsFormsIntegration.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\Microsoft.DiaSymReader.Native.amd64.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\System.IO.Compression.Native.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\clretwrc.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\clrgc.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\clrjit.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\coreclr.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\createdump.exe
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\hostfxr.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\hostpolicy.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\mscordaccore.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\mscordaccore_amd64_amd64_8.0.1325.6609.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\mscordbi.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\mscorrc.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\msquic.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\D3DCompiler_47_cor3.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PenImc_cor3.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\PresentationNative_cor3.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\vcruntime140_cor3.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\wpfgfx_cor3.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\cs\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\de\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\es\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\fr\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\it\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ja\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ko\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pl\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\pt-BR\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\ru\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\tr\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hans\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\Microsoft.VisualBasic.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\PresentationCore.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\PresentationFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\PresentationUI.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\ReachFramework.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Windows.Controls.Ribbon.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Windows.Forms.Design.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Windows.Forms.Primitives.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Windows.Forms.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Windows.Input.Manipulations.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\System.Xaml.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\UIAutomationClient.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\UIAutomationClientSideProviders.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\UIAutomationProvider.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\UIAutomationTypes.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\WindowsBase.resources.dll
+D:\Projects\ModStructureCheckerApp\bin\Release\net8.0-windows\win-x64\zh-Hant\WindowsFormsIntegration.resources.dll
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.ErrorStatusForm.resources
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.Form1.resources
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.csproj.GenerateResource.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.AssemblyInfoInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.AssemblyInfo.cs
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.csproj.CoreCompileInputs.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStruc.0C339A0D.Up2Date
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\refint\ModStructureCheckerApp.dll
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.pdb
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.genruntimeconfig.cache
+D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ref\ModStructureCheckerApp.dll
+
+--------------------------------------------------
+Файл: D:\Projects\ModStructureCheckerApp\obj\Release\net8.0-windows\win-x64\ModStructureCheckerApp.GlobalUsings.g.cs
+Тип: cs
+Содержимое:
+// <auto-generated/>
+global using global::System;
+global using global::System.Collections.Generic;
+global using global::System.Drawing;
+global using global::System.IO;
+global using global::System.Linq;
+global using global::System.Net.Http;
+global using global::System.Threading;
+global using global::System.Threading.Tasks;
+global using global::System.Windows.Forms;
+
+--------------------------------------------------
+
+Изображения:
+Мод: Properties
+--------------------------------------------------
+Структура директорий:
+└─ Properties
+   └─ PublishProfiles
+
+Текстовые файлы:
+
+Изображения:
+Сборка завершена. ✅

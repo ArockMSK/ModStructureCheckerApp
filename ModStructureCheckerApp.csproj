@@ -6,12 +6,17 @@
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Version>1.0.0</Version>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
-		<FileVersion>1.0.0.0</FileVersion>
+		<Version>1.1.0</Version>
+		<!-- Фиксированная версия для проекта -->
+		<AssemblyVersion>1.1.*</AssemblyVersion>
+		<!-- Автоматический Build и Revision -->
+		<FileVersion>1.1.*</FileVersion>
+		<!-- Автоматический Build и Revision -->
 		<PublishSingleFile>true</PublishSingleFile>
 		<SelfContained>false</SelfContained>
 		<ApplicationIcon>ModStructureCheckerApp.ico</ApplicationIcon>
+		<Deterministic>false</Deterministic>
+		<!-- Отключаем детерминизм -->
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -35,9 +40,7 @@
 		<Compile Update="ErrorStatusForm.cs">
 			<SubType>Form</SubType>
 		</Compile>
-		<Compile Update="Form1.cs">
-			<SubType>Form</SubType>
-		</Compile>
+		<Compile Update="Form1.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

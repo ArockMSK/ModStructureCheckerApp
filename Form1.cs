@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace ModStructureCheckerApp
 {
@@ -13,6 +14,8 @@ namespace ModStructureCheckerApp
         private string saveFolder = "";
         private ErrorStatusForm? errorForm = null;
         private string currentLanguage;
+        private List<string> selectedTextExtensions = new List<string> { ".xml", ".cs", ".txt" };
+        private List<string> selectedImageExtensions = new List<string> { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
 
         public Form1()
         {
@@ -39,6 +42,9 @@ namespace ModStructureCheckerApp
 
         private void UpdateLanguage()
         {
+            // Получаем версию из метаданных сборки (только Major.Minor.Build)
+            string version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.1.0";
+
             if (currentLanguage == "English")
             {
                 Text = "Mod Structure Checker";
@@ -47,7 +53,8 @@ namespace ModStructureCheckerApp
                 btnSaveFolder.Text = "Select Save Folder 📂";
                 label1.Text = "Status: 📋";
                 label2.Text = "Save Folder: 🗂️";
-                labelAuthor.Text = "v1.0.0 by Arock (Built with Grok from xAI)";
+                labelAuthor.Text = $"v{version} by Arock (Built with Grok from xAI)"; // Динамическая версия
+                extensionsSettingsMenu.Text = "Extension Settings";
             }
             else if (currentLanguage == "Russian")
             {
@@ -57,7 +64,8 @@ namespace ModStructureCheckerApp
                 btnSaveFolder.Text = "Выбрать папку сохранения 📂";
                 label1.Text = "Статус: 📋";
                 label2.Text = "Папка для сохранения: 🗂️";
-                labelAuthor.Text = "v1.0.0 от Arock (Создано с Grok от xAI)";
+                labelAuthor.Text = $"v{version} от Arock (Создано с Grok от xAI)"; // Динамическая версия
+                extensionsSettingsMenu.Text = "Настройки расширений";
             }
             else // Chinese
             {
@@ -67,41 +75,59 @@ namespace ModStructureCheckerApp
                 btnSaveFolder.Text = "选择保存文件夹 📂";
                 label1.Text = "状态: 📋";
                 label2.Text = "保存文件夹: 🗂️";
-                labelAuthor.Text = "v1.0.0 by Arock (由xAI的Grok构建)";
+                labelAuthor.Text = $"v{version} by Arock (由xAI的Grok构建)"; // Динамическая версия
+                extensionsSettingsMenu.Text = "扩展设置";
             }
         }
 
-        // Остальной код остаётся без изменений (PrintTree, btnSelectFolder_Click, btnSaveFolder_Click, btnRun_Click, LogError, languageXXX_Click)
         private void PrintTree(string path, string indent, bool isLast, StreamWriter writer)
         {
             string dirName = Path.GetFileName(path);
             writer.WriteLine(indent + (isLast ? "└─ " : "├─ ") + dirName);
             string newIndent = indent + (isLast ? "   " : "│  ");
+
+            string[] subDirs = Array.Empty<string>();
+            string[] files = Array.Empty<string>();
+
             try
             {
-                string[] subDirs = Directory.GetDirectories(path);
-                for (int i = 0; i < subDirs.Length; i++)
-                {
-                    PrintTree(subDirs[i], newIndent, i == subDirs.Length - 1, writer);
-                }
-                string[] files = Directory.GetFiles(path);
-                for (int i = 0; i < files.Length; i++)
-                {
-                    string fileName = Path.GetFileName(files[i]);
-                    writer.WriteLine(newIndent + (i == files.Length - 1 ? "└─ " : "├─ ") + fileName);
-                }
+                subDirs = Directory.GetDirectories(path);
             }
             catch (Exception ex)
             {
-                writer.WriteLine(indent + "[ERROR] " + ex.Message);
+                writer.WriteLine(newIndent + "[ERROR] " + ex.Message);
                 if (errorForm != null && !errorForm.IsDisposed)
-                    errorForm.AddError(currentLanguage == "English" ? $"Error processing directory {path}: {ex.Message}" :
-                                      currentLanguage == "Russian" ? $"Ошибка при обработке директории {path}: {ex.Message}" :
-                                      $"处理目录 {path} 时出错: {ex.Message}");
+                    errorForm.AddError(currentLanguage == "English" ? $"Error processing directory {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при обработке директории {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"处理目录 {path} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+
+            for (int i = 0; i < subDirs.Length; i++)
+            {
+                PrintTree(subDirs[i], newIndent, i == subDirs.Length - 1, writer);
+            }
+
+            try
+            {
+                files = Directory.GetFiles(path);
+            }
+            catch (Exception ex)
+            {
+                writer.WriteLine(newIndent + "[ERROR] " + ex.Message);
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error processing files in {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при обработке файлов в {path}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"处理 {path} 中的文件时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                string fileName = Path.GetFileName(files[i]);
+                writer.WriteLine(newIndent + (i == files.Length - 1 ? "└─ " : "├─ ") + fileName);
             }
         }
 
-        private void btnSelectFolder_Click(object sender, EventArgs e)
+        private void btnSelectFolder_Click(object? sender, EventArgs e)
         {
             using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
             {
@@ -122,7 +148,7 @@ namespace ModStructureCheckerApp
             }
         }
 
-        private void btnSaveFolder_Click(object sender, EventArgs e)
+        private void btnSaveFolder_Click(object? sender, EventArgs e)
         {
             using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
             {
@@ -143,7 +169,7 @@ namespace ModStructureCheckerApp
             }
         }
 
-        private void btnRun_Click(object sender, EventArgs e)
+        private void btnRun_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(selectedFolder))
             {
@@ -166,27 +192,38 @@ namespace ModStructureCheckerApp
             }
 
             string outputFile = Path.Combine(saveFolder, "ModFullData.txt");
-            string[] textExtensions = { ".xml", ".cs", ".txt" };
-            string[] imageExtensions = { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
+            string errorFile = Path.Combine(saveFolder, "ScanErrors.txt");
 
-            errorForm = new ErrorStatusForm();
-            errorForm.UpdateLanguage(currentLanguage);
-            errorForm.Show(this);
-
-            try
+            if (errorForm == null || errorForm.IsDisposed)
             {
-                txtStatus.Text = currentLanguage == "English" ? "Analysis started... ⏳\r\n" :
-                                currentLanguage == "Russian" ? "Сборка началась... ⏳\r\n" :
-                                "分析开始... ⏳\r\n";
-                using (StreamWriter writer = new StreamWriter(outputFile, false, Encoding.UTF8))
-                {
-                    writer.WriteLine(currentLanguage == "English" ? $"Full mod data analysis started: {DateTime.Now}" :
-                                    currentLanguage == "Russian" ? $"Полная сборка данных модов начата: {DateTime.Now}" :
-                                    $"模组数据完整分析开始: {DateTime.Now}");
-                    writer.WriteLine();
+                errorForm = new ErrorStatusForm(saveFolder, currentLanguage);
+                errorForm.UpdateLanguage(currentLanguage);
+                errorForm.Show(this);
+            }
 
-                    string[] modFolders = Directory.GetDirectories(selectedFolder);
-                    foreach (var modPath in modFolders)
+            txtStatus.Text = currentLanguage == "English" ? "Analysis started... ⏳\r\n" :
+                            currentLanguage == "Russian" ? "Сборка началась... ⏳\r\n" :
+                            "分析开始... ⏳\r\n";
+            if (File.Exists(errorFile)) File.Delete(errorFile);
+
+            using (StreamWriter writer = new StreamWriter(outputFile, false, Encoding.UTF8))
+            {
+                writer.WriteLine(currentLanguage == "English" ? $"Full mod data analysis started: {DateTime.Now}" :
+                                currentLanguage == "Russian" ? $"Полная сборка данных модов начата: {DateTime.Now}" :
+                                $"模组数据完整分析开始: {DateTime.Now}");
+                writer.WriteLine();
+
+                // Анализ корневой директории
+                writer.WriteLine(currentLanguage == "English" ? "Root Directory:" :
+                                currentLanguage == "Russian" ? "Корневая директория:" :
+                                "根目录:");
+                ProcessFilesInDirectory(selectedFolder, writer, true);
+                writer.WriteLine();
+
+                string[] modFolders = Directory.GetDirectories(selectedFolder);
+                foreach (var modPath in modFolders)
+                {
+                    try
                     {
                         string modName = Path.GetFileName(modPath);
                         writer.WriteLine(currentLanguage == "English" ? $"Mod: {modName}" :
@@ -200,112 +237,172 @@ namespace ModStructureCheckerApp
                         PrintTree(modPath, "", true, writer);
                         writer.WriteLine();
 
-                        writer.WriteLine(currentLanguage == "English" ? "Text Files:" :
-                                        currentLanguage == "Russian" ? "Текстовые файлы:" :
-                                        "文本文件:");
-                        foreach (var ext in textExtensions)
-                        {
-                            string[] files = Directory.GetFiles(modPath, "*" + ext, SearchOption.AllDirectories);
-                            foreach (var file in files)
-                            {
-                                writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
-                                                currentLanguage == "Russian" ? $"Файл: {file}" :
-                                                $"文件: {file}");
-                                writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
-                                                currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
-                                                $"类型: {ext.TrimStart('.')}");
-                                writer.WriteLine(currentLanguage == "English" ? "Content:" :
-                                                currentLanguage == "Russian" ? "Содержимое:" :
-                                                "内容:");
-                                try
-                                {
-                                    string content = File.ReadAllText(file, Encoding.UTF8);
-                                    writer.WriteLine(content);
-                                }
-                                catch (Exception ex)
-                                {
-                                    writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not read file: {ex.Message}" :
-                                                    currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось прочитать файл: {ex.Message}" :
-                                                    $"[错误] 无法读取文件: {ex.Message}");
-                                    if (errorForm != null && !errorForm.IsDisposed)
-                                        errorForm.AddError(currentLanguage == "English" ? $"Error reading file {file}: {ex.Message}" :
-                                                          currentLanguage == "Russian" ? $"Ошибка при чтении файла {file}: {ex.Message}" :
-                                                          $"读取文件 {file} 时出错: {ex.Message}");
-                                }
-                                writer.WriteLine(new string('-', 50));
-                            }
-                        }
-                        writer.WriteLine();
-
-                        writer.WriteLine(currentLanguage == "English" ? "Image Files:" :
-                                        currentLanguage == "Russian" ? "Изображения:" :
-                                        "图像文件:");
-                        foreach (var ext in imageExtensions)
-                        {
-                            string[] files = Directory.GetFiles(modPath, "*" + ext, SearchOption.AllDirectories);
-                            foreach (var file in files)
-                            {
-                                writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
-                                                currentLanguage == "Russian" ? $"Файл: {file}" :
-                                                $"文件: {file}");
-                                writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
-                                                currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
-                                                $"类型: {ext.TrimStart('.')}");
-                                try
-                                {
-                                    using (Bitmap bitmap = new Bitmap(file))
-                                    {
-                                        int width = bitmap.Width;
-                                        int height = bitmap.Height;
-                                        long fileSize = new FileInfo(file).Length;
-                                        writer.WriteLine(currentLanguage == "English" ? $"Dimensions: {width}x{height} pixels" :
-                                                        currentLanguage == "Russian" ? $"Размеры: {width}x{height} пикселей" :
-                                                        $"尺寸: {width}x{height} 像素");
-                                        writer.WriteLine(currentLanguage == "English" ? $"File Size: {fileSize} bytes" :
-                                                        currentLanguage == "Russian" ? $"Размер файла: {fileSize} байт" :
-                                                        $"文件大小: {fileSize} 字节");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not process image: {ex.Message}" :
-                                                    currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось обработать изображение: {ex.Message}" :
-                                                    $"[错误] 无法处理图像: {ex.Message}");
-                                    if (errorForm != null && !errorForm.IsDisposed)
-                                        errorForm.AddError(currentLanguage == "English" ? $"Error processing image {file}: {ex.Message}" :
-                                                          currentLanguage == "Russian" ? $"Ошибка при обработке изображения {file}: {ex.Message}" :
-                                                          $"处理图像 {file} 时出错: {ex.Message}");
-                                }
-                                writer.WriteLine(new string('-', 50));
-                            }
-                        }
-                        writer.WriteLine();
+                        ProcessFilesInDirectory(modPath, writer, false);
                     }
-                    writer.WriteLine(currentLanguage == "English" ? "Analysis completed. ✅" :
-                                    currentLanguage == "Russian" ? "Сборка завершена. ✅" :
-                                    "分析完成。 ✅");
+                    catch (Exception ex)
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Failed to process mod {modPath}: {ex.Message}" :
+                                        currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось обработать мод {modPath}: {ex.Message}" :
+                                        $"[错误] 无法处理模组 {modPath}: {ex.Message}");
+                        if (errorForm != null && !errorForm.IsDisposed)
+                            errorForm.AddError(currentLanguage == "English" ? $"General analysis error for mod {modPath}: {TranslateException(ex.Message, currentLanguage)}" :
+                                              currentLanguage == "Russian" ? $"Общая ошибка сборки для мода {modPath}: {TranslateException(ex.Message, currentLanguage)}" :
+                                              $"模组 {modPath} 的总体分析错误: {TranslateException(ex.Message, currentLanguage)}");
+                    }
                 }
-                txtStatus.Text += currentLanguage == "English" ? $"Analysis completed. File saved: {outputFile} 📄\r\n" :
-                                 currentLanguage == "Russian" ? $"Сборка завершена. Файл сохранен: {outputFile} 📄\r\n" :
-                                 $"分析完成。文件已保存: {outputFile} 📄\r\n";
+
+                writer.WriteLine(currentLanguage == "English" ? "Analysis completed. ✅" :
+                                currentLanguage == "Russian" ? "Сборка завершена. ✅" :
+                                "分析完成。 ✅");
+            }
+
+            txtStatus.Text += currentLanguage == "English" ? $"Analysis completed. File saved: {outputFile} 📄\r\n" :
+                             currentLanguage == "Russian" ? $"Сборка завершена. Файл сохранен: {outputFile} 📄\r\n" :
+                             $"分析完成。文件已保存: {outputFile} 📄\r\n";
+            if (File.Exists(errorFile) && new FileInfo(errorFile).Length > 0)
+                txtStatus.Text += currentLanguage == "English" ? $"Errors logged: {errorFile} ⚠️\r\n" :
+                                 currentLanguage == "Russian" ? $"Ошибки записаны: {errorFile} ⚠️\r\n" :
+                                 $"错误已记录: {errorFile} ⚠️\r\n";
+            if (errorForm != null && !errorForm.IsDisposed)
+                errorForm.CompleteScan();
+            if (errorForm != null && !errorForm.IsDisposed && errorForm.IsErrorLogEmpty())
+            {
+                errorForm.Close();
+            }
+        }
+
+        private void ProcessFilesInDirectory(string directory, StreamWriter writer, bool isRoot)
+        {
+            writer.WriteLine(currentLanguage == "English" ? "Text Files:" :
+                            currentLanguage == "Russian" ? "Текстовые файлы:" :
+                            "文本文件:");
+            try
+            {
+                string[] allFiles = isRoot ? Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly) : Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+                foreach (var file in allFiles)
+                {
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (selectedTextExtensions.Contains(ext))
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
+                                        currentLanguage == "Russian" ? $"Файл: {file}" :
+                                        $"文件: {file}");
+                        writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
+                                        currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
+                                        $"类型: {ext.TrimStart('.')}");
+                        writer.WriteLine(currentLanguage == "English" ? "Content:" :
+                                        currentLanguage == "Russian" ? "Содержимое:" :
+                                        "内容:");
+                        try
+                        {
+                            string content = File.ReadAllText(file, Encoding.UTF8);
+                            writer.WriteLine(content);
+                        }
+                        catch (Exception ex)
+                        {
+                            writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not read file: {ex.Message}" :
+                                            currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось прочитать файл: {ex.Message}" :
+                                            $"[错误] 无法读取文件: {ex.Message}");
+                            if (errorForm != null && !errorForm.IsDisposed)
+                                errorForm.AddError(currentLanguage == "English" ? $"Error reading file {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  currentLanguage == "Russian" ? $"Ошибка при чтении файла {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  $"读取文件 {file} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+                        }
+                        writer.WriteLine(new string('-', 50));
+                    }
+                }
             }
             catch (Exception ex)
             {
-                txtStatus.Text += currentLanguage == "English" ? $"Error: {ex.Message} ❌\r\n" :
-                                 currentLanguage == "Russian" ? $"Ошибка: {ex.Message} ❌\r\n" :
-                                 $"错误: {ex.Message} ❌\r\n";
+                writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not scan text files: {ex.Message}" :
+                                currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось просканировать текстовые файлы: {ex.Message}" :
+                                $"[错误] 无法扫描文本文件: {ex.Message}");
                 if (errorForm != null && !errorForm.IsDisposed)
-                    errorForm.AddError(currentLanguage == "English" ? $"General analysis error: {ex.Message}" :
-                                      currentLanguage == "Russian" ? $"Общая ошибка сборки: {ex.Message}" :
-                                      $"分析总体错误: {ex.Message}");
+                    errorForm.AddError(currentLanguage == "English" ? $"Error scanning text files in {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при сканировании текстовых файлов в {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"扫描 {directory} 中的文本文件时出错: {TranslateException(ex.Message, currentLanguage)}");
             }
-            finally
+            writer.WriteLine();
+
+            writer.WriteLine(currentLanguage == "English" ? "Image Files:" :
+                            currentLanguage == "Russian" ? "Изображения:" :
+                            "图像文件:");
+            try
             {
-                if (errorForm != null && !errorForm.IsDisposed && errorForm.IsErrorLogEmpty())
+                string[] allFiles = isRoot ? Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly) : Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+                foreach (var file in allFiles)
                 {
-                    errorForm.Close();
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (selectedImageExtensions.Contains(ext))
+                    {
+                        writer.WriteLine(currentLanguage == "English" ? $"File: {file}" :
+                                        currentLanguage == "Russian" ? $"Файл: {file}" :
+                                        $"文件: {file}");
+                        writer.WriteLine(currentLanguage == "English" ? $"Type: {ext.TrimStart('.')}" :
+                                        currentLanguage == "Russian" ? $"Тип: {ext.TrimStart('.')}" :
+                                        $"类型: {ext.TrimStart('.')}");
+                        try
+                        {
+                            using (Bitmap bitmap = new Bitmap(file))
+                            {
+                                int width = bitmap.Width;
+                                int height = bitmap.Height;
+                                long fileSize = new FileInfo(file).Length;
+                                writer.WriteLine(currentLanguage == "English" ? $"Dimensions: {width}x{height} pixels" :
+                                                currentLanguage == "Russian" ? $"Размеры: {width}x{height} пикселей" :
+                                                $"尺寸: {width}x{height} 像素");
+                                writer.WriteLine(currentLanguage == "English" ? $"File Size: {fileSize} bytes" :
+                                                currentLanguage == "Russian" ? $"Размер файла: {fileSize} байт" :
+                                                $"文件大小: {fileSize} 字节");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not process image: {ex.Message}" :
+                                            currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось обработать изображение: {ex.Message}" :
+                                            $"[错误] 无法处理图像: {ex.Message}");
+                            if (errorForm != null && !errorForm.IsDisposed)
+                                errorForm.AddError(currentLanguage == "English" ? $"Error processing image {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  currentLanguage == "Russian" ? $"Ошибка при обработке изображения {file}: {TranslateException(ex.Message, currentLanguage)}" :
+                                                  $"处理图像 {file} 时出错: {TranslateException(ex.Message, currentLanguage)}");
+                        }
+                        writer.WriteLine(new string('-', 50));
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                writer.WriteLine(currentLanguage == "English" ? $"[ERROR] Could not scan image files: {ex.Message}" :
+                                currentLanguage == "Russian" ? $"[ОШИБКА] Не удалось просканировать изображения: {ex.Message}" :
+                                $"[错误] 无法扫描图像文件: {ex.Message}");
+                if (errorForm != null && !errorForm.IsDisposed)
+                    errorForm.AddError(currentLanguage == "English" ? $"Error scanning image files in {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      currentLanguage == "Russian" ? $"Ошибка при сканировании изображений в {directory}: {TranslateException(ex.Message, currentLanguage)}" :
+                                      $"扫描 {directory} 中的图像文件时出错: {TranslateException(ex.Message, currentLanguage)}");
+            }
+        }
+
+        private string TranslateException(string message, string language)
+        {
+            if (message.Contains("Access to the path") && message.Contains("is denied"))
+            {
+                return language == "English" ? "Access to the path is denied" :
+                       language == "Russian" ? "Доступ к пути запрещён" :
+                       "路径访问被拒绝";
+            }
+            else if (message.Contains("File Not Found"))
+            {
+                return language == "English" ? "File not found" :
+                       language == "Russian" ? "Файл не найден" :
+                       "文件未找到";
+            }
+            else if (message.Contains("Invalid Image Format"))
+            {
+                return language == "English" ? "Invalid image format" :
+                       language == "Russian" ? "Недопустимый формат изображения" :
+                       "无效的图像格式";
+            }
+            return message;
         }
 
         private void LogError(string errorMessage)
@@ -320,7 +417,7 @@ namespace ModStructureCheckerApp
             }
         }
 
-        private void languageEnglish_Click(object sender, EventArgs e)
+        private void languageEnglish_Click(object? sender, EventArgs e)
         {
             currentLanguage = "English";
             UpdateLanguage();
@@ -328,7 +425,7 @@ namespace ModStructureCheckerApp
                 errorForm.UpdateLanguage(currentLanguage);
         }
 
-        private void languageRussian_Click(object sender, EventArgs e)
+        private void languageRussian_Click(object? sender, EventArgs e)
         {
             currentLanguage = "Russian";
             UpdateLanguage();
@@ -336,12 +433,24 @@ namespace ModStructureCheckerApp
                 errorForm.UpdateLanguage(currentLanguage);
         }
 
-        private void languageChinese_Click(object sender, EventArgs e)
+        private void languageChinese_Click(object? sender, EventArgs e)
         {
             currentLanguage = "Chinese";
             UpdateLanguage();
             if (errorForm != null && !errorForm.IsDisposed)
                 errorForm.UpdateLanguage(currentLanguage);
+        }
+
+        private void extensionsSettings_Click(object? sender, EventArgs e)
+        {
+            using (var settingsForm = new ExtensionSettingsForm(selectedTextExtensions, selectedImageExtensions, currentLanguage))
+            {
+                if (settingsForm.ShowDialog(this) == DialogResult.OK)
+                {
+                    selectedTextExtensions = settingsForm.SelectedTextExtensions;
+                    selectedImageExtensions = settingsForm.SelectedImageExtensions;
+                }
+            }
         }
     }
 }

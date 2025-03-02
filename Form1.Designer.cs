@@ -22,7 +22,8 @@
             languageMenu = new ToolStripMenuItem();
             languageEnglish = new ToolStripMenuItem();
             languageRussian = new ToolStripMenuItem();
-            languageChinese = new ToolStripMenuItem(); // Добавляем китайский
+            languageChinese = new ToolStripMenuItem();
+            extensionsSettingsMenu = new ToolStripMenuItem(); // Новое меню
             btnSelectFolder = new Button();
             btnRun = new Button();
             txtStatus = new TextBox();
@@ -64,6 +65,13 @@
             languageChinese.Size = new Size(180, 22);
             languageChinese.Text = "中文";
             languageChinese.Click += new EventHandler(languageChinese_Click);
+
+            // extensionsSettingsMenu
+            extensionsSettingsMenu.Name = "extensionsSettingsMenu";
+            extensionsSettingsMenu.Size = new Size(120, 20);
+            extensionsSettingsMenu.Text = "Extension Settings";
+            extensionsSettingsMenu.Click += new EventHandler(extensionsSettings_Click);
+            menuStrip1.Items.Add(extensionsSettingsMenu);
 
             // btnSelectFolder
             btnSelectFolder.Location = new Point(12, 36);
@@ -128,7 +136,8 @@
             labelAuthor.Name = "labelAuthor";
             labelAuthor.Size = new Size(200, 15);
             labelAuthor.TabIndex = 7;
-            labelAuthor.Text = "v1.0.0 by Arock (Built with Grok from xAI)";
+            // Удаляем или комментируем эту строку:
+            // labelAuthor.Text = "v1.0.0 by Arock (Built with Grok from xAI)";
 
             // Form1
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -157,7 +166,8 @@
         private ToolStripMenuItem languageMenu;
         private ToolStripMenuItem languageEnglish;
         private ToolStripMenuItem languageRussian;
-        private ToolStripMenuItem languageChinese; // Новый элемент
+        private ToolStripMenuItem languageChinese;
+        private ToolStripMenuItem extensionsSettingsMenu; // Новое поле
         private Button btnSelectFolder;
         private Button btnRun;
         private TextBox txtStatus;
